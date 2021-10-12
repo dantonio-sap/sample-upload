@@ -1,0 +1,132 @@
+_schema-version: "3.1"
+ID: upload
+description: A simple CAP project.
+version: 1.0.0
+modules:
+- name: upload-srv
+  type: nodejs
+  path: gen/srv
+  requires:
+  - name: upload-db
+  provides:
+  - name: srv-api
+    properties:
+      srv-url: ${default-url}
+  parameters:
+    buildpack: nodejs_buildpack
+- name: upload-db-deployer
+  type: hdb
+  path: gen/db
+  requires:
+  - name: upload-db
+  parameters:
+    buildpack: nodejs_buildpack
+- name: upload-app-content
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: upload-repo-host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - uploadui.zip
+      name: uploadui
+      target-path: resources/
+- name: uploadui
+  type: html5
+  path: app/upload-ui
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+- name: upload-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: upload-dest-srv
+    parameters:
+      content-target: true
+  - name: upload-repo-host
+    parameters:
+      service-key:
+        name: upload-repo-host-key
+  - name: upload-xsuaa-service
+    parameters:
+      service-key:
+        name: uaa_upload-key
+  - name: srv-api
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Authentication: OAuth2UserTokenExchange
+          Name: upload-app-srv
+          TokenServiceInstanceName: upload-xsuaa-service
+          TokenServiceKeyName: uaa_upload-key
+          URL: '~{srv-api/srv-url}'
+          sap.cloud.service: sample.upload
+        - Name: sample_upload_upload_repo_host
+          ServiceInstanceName: upload-html5-srv
+          ServiceKeyName: upload-repo-host-key
+          sap.cloud.service: sample.upload
+        - Authentication: OAuth2UserTokenExchange
+          Name: sample_upload_uaa_upload
+          ServiceInstanceName: upload-xsuaa-service
+          ServiceKeyName: uaa_upload-key
+          sap.cloud.service: sample.upload
+        existing_destinations_policy: update
+  build-parameters:
+    no-source: true
+resources:
+- name: upload-db
+  type: com.sap.xs.hdi-container
+  parameters:
+    service: hana
+    service-plan: hdi-shared
+  properties:
+    hdi-service-name: ${service-name}
+- name: upload-repo-host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: upload-html5-srv
+    service-plan: app-host
+- name: upload-dest-srv
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      init_data:
+        instance:
+          destinations:
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          existing_destinations_policy: update
+      version: 1.0.0
+    service: destination
+    service-name: upload-dest-srv
+    service-plan: lite
+- name: upload-xsuaa-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: upload-xsuaa-service
+    service-plan: application
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npm install --production
+    - npx -p @sap/cds-dk cds build --production

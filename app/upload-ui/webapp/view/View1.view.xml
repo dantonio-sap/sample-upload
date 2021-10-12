@@ -1,0 +1,62 @@
+<mvc:View
+    controllerName="uploadui.controller.View1"
+    xmlns:mvc="sap.ui.core.mvc"
+    displayBlock="true"
+    xmlns="sap.m"
+    xmlns:upload="sap.m.upload"
+>
+	<Shell id="shell">
+		<App id="app">
+			<pages>
+				<Page id="page" title="{i18n>title}">
+					<content>
+                    <upload:UploadSet
+					id="uploadSet"
+					instantUpload="false"
+					uploadEnabled="true"
+                    items="{path: '/Attachments', templateShareable:false}"
+                    afterItemAdded="onAfterItemAdded"
+					uploadCompleted="onUploadCompleted"			
+				>
+					<upload:toolbar>
+					</upload:toolbar>
+					<upload:items>
+						<upload:UploadSetItem
+							fileName="{fileName}"
+							mediaType="{mediaType}"
+							url="{= 'api/catalog/Attachments(' + ${ID} + ')/content' }"
+							enabledEdit="false"
+							visibleEdit="false"
+							openPressed="onOpenPressed"
+                            thumbnailUrl="{
+								path: 'mediaType',
+								formatter: '.formatThumbnailUrl'
+							}"
+						>
+							<upload:attributes>
+								<ObjectAttribute
+									title="Uploaded By"
+									text="{createdBy}"
+									active="false"
+								/>
+								<ObjectAttribute
+									title="Uploaded on"
+									text="{createdAt}"
+									active="false"
+								/>
+								<ObjectAttribute
+									title="File Size"
+									text="{size}"
+									active="false"
+								/>
+							</upload:attributes>
+						</upload:UploadSetItem>
+					</upload:items>
+				</upload:UploadSet>
+             
+                    </content>
+				</Page>
+			</pages>
+		</App>
+	</Shell>
+</mvc:View>
