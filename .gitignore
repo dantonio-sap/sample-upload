@@ -4,3 +4,6 @@ gen/db/.env
 node_modules
 node_modules
 mta_archives/*.mtar
+resources/uploadui.zip
+app/upload-ui/dist/uploadui.zip
+.gitignore
