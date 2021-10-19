@@ -3,3 +3,4 @@
 gen/db/.env
 node_modules
 node_modules
+mta_archives/*.mtar
